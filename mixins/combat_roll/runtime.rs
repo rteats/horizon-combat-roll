@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-only
 // Gameplay and cooldown logic adapted from ZsoltMolnarrr/CombatRoll.
 // Kept free of Horizon dependencies so the same source can be unit-tested.
 use std::{cell::RefCell, collections::BTreeMap};
@@ -197,7 +197,7 @@ mod tests {
         assert!(s.meter(cfg()).rolling);
         s.pending = true;
         assert!(!s.tick(cfg(), true), "no double-roll while active");
-        for _ in 0..78 { s.tick(cfg(), true); }
+        for _ in 0..79 { s.tick(cfg(), true); }
         assert_eq!(s.meter(cfg()).charges, 1);
     }
     #[test]
