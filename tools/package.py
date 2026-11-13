@@ -57,6 +57,16 @@ def package_bytes() -> bytes:
         "hooks": config["hooks"],
     }
     data = {"horizon-native.json": (json.dumps(native, sort_keys=True, indent=2) + "\n").encode()}
+    # Every redistributed source bundle must carry its GPLv3 license and
+    # identify the original mod author, not just link to this repository.
+    data[f"mixins/{MOD_ID}/LICENSE"] = (ROOT / "LICENSE").read_bytes()
+    data[f"mixins/{MOD_ID}/NOTICE"] = (
+        "Horizon Combat Roll\n"
+        "Gameplay based on CombatRoll by Zsolt Molnar:\n"
+        "https://github.com/ZsoltMolnarrr/CombatRoll\n"
+        "Original license: GNU General Public License version 3.\n"
+        "Rust adaptation: GPL-3.0-only.\n"
+    ).encode("utf-8")
     for path in sorted(BUNDLE.iterdir()):
         if path.is_symlink() or not path.is_file():
             raise ValueError(f"unexpected non-file in bundle: {path}")
@@ -81,6 +91,8 @@ def main() -> None:
     with zipfile.ZipFile(io.BytesIO(data)) as z:
         assert z.testzip() is None
         assert json.loads(z.read("horizon-native.json"))["id"] == MOD_ID
+        assert "mixins/combat_roll/LICENSE" in z.namelist()
+        assert "mixins/combat_roll/NOTICE" in z.namelist()
     if args.check:
         if data != package_bytes():
             raise ValueError("the package is not reproducible")
