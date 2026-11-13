@@ -1,7 +1,7 @@
 name: Build and validate Combat Roll
 on:
   push:
-    branches: [main, "feat/**", "automation/**"]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
