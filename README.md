@@ -28,4 +28,4 @@ Pull requests and pushes run Rust tests, formatting/lints, package checks and th
 
 ## Licensing and attribution
 
-Original [CombatRoll](https://github.com/ZsoltMolnarrr/CombatRoll) by Zsolt Molnar, licensed under GNU GPL v3. This Rust derivative is distributed under **GPL-3.0-or-later**; original game mod sources and its artwork/animations are not embedded. Horizon itself and horizon-mixins are separate upstream projects.
+Original [CombatRoll](https://github.com/ZsoltMolnarrr/CombatRoll) by Zsolt Molnar, licensed under GNU GPL v3. This Rust derivative is distributed under **GPL-3.0-only**; original game mod sources and its artwork/animations are not embedded. Horizon itself and horizon-mixins are separate upstream projects.
