@@ -50,13 +50,28 @@ impl Settings {
         [
             format!("Roll cooldown: {:.1}s", self.cooldown_ticks as f32 / 20.0),
             format!("Extra roll distance: {:.1}", self.extra_distance),
-            format!("Roll while airborne: {}", if self.allow_airborne { "ON" } else { "OFF" }),
+            format!(
+                "Roll while airborne: {}",
+                if self.allow_airborne { "ON" } else { "OFF" }
+            ),
         ]
     }
     pub fn click(&mut self, index: usize) {
         match index {
-            0 => self.cooldown_ticks = match self.cooldown_ticks { 40 => 80, 80 => 120, _ => 40 },
-            1 => self.extra_distance = if self.extra_distance >= 3.0 { 0.0 } else { self.extra_distance + 1.0 },
+            0 => {
+                self.cooldown_ticks = match self.cooldown_ticks {
+                    40 => 80,
+                    80 => 120,
+                    _ => 40,
+                }
+            }
+            1 => {
+                self.extra_distance = if self.extra_distance >= 3.0 {
+                    0.0
+                } else {
+                    self.extra_distance + 1.0
+                }
+            }
             2 => self.allow_airborne = !self.allow_airborne,
             _ => {}
         }
@@ -89,7 +104,12 @@ struct State {
 impl Default for State {
     fn default() -> Self {
         // CombatRoll starts with zero charges, recharging one after the first cooldown.
-        Self { pending: false, elapsed: u32::MAX, charges: 0, recharge: 0 }
+        Self {
+            pending: false,
+            elapsed: u32::MAX,
+            charges: 0,
+            recharge: 0,
+        }
     }
 }
 impl State {
@@ -129,9 +149,7 @@ thread_local! {
     static SETTINGS: RefCell<Option<Settings>> = const { RefCell::new(None) };
 }
 pub fn settings(mut get: impl FnMut(&str) -> Option<String>) -> Settings {
-    SETTINGS.with_borrow_mut(|cached| {
-        *cached.get_or_insert_with(|| Settings::read(&mut get))
-    })
+    SETTINGS.with_borrow_mut(|cached| *cached.get_or_insert_with(|| Settings::read(&mut get)))
 }
 pub fn set_settings(settings: Settings) {
     SETTINGS.with_borrow_mut(|cached| *cached = Some(settings));
@@ -140,20 +158,31 @@ pub fn queue(window: u64) {
     STATES.with_borrow_mut(|states| states.entry(window).or_default().pending = true);
 }
 pub fn reset(window: u64) {
-    STATES.with_borrow_mut(|states| { states.remove(&window); });
+    STATES.with_borrow_mut(|states| {
+        states.remove(&window);
+    });
 }
 pub fn advance(window: u64, config: Settings, eligible: bool) -> bool {
     STATES.with_borrow_mut(|states| states.entry(window).or_default().tick(config, eligible))
 }
 pub fn meter(window: u64, config: Settings) -> Meter {
-    STATES.with_borrow(|states| states.get(&window).cloned().unwrap_or_default().meter(config))
+    STATES.with_borrow(|states| {
+        states
+            .get(&window)
+            .cloned()
+            .unwrap_or_default()
+            .meter(config)
+    })
 }
 
 /// Horizontal push in blocks/tick, matching CombatRoll's normalized
 /// strafe/forward vector, the player's yaw and the 0.475 distance scale.
 /// At rest, the upstream mod rolls towards the player's facing direction.
 pub fn velocity(strafe: f32, forward: f32, yaw_degrees: f32, extra_distance: f32) -> [f32; 3] {
-    if ![strafe, forward, yaw_degrees, extra_distance].iter().all(|x| x.is_finite()) {
+    if ![strafe, forward, yaw_degrees, extra_distance]
+        .iter()
+        .all(|x| x.is_finite())
+    {
         return [0.0; 3];
     }
     let (x, z) = if strafe.abs() + forward.abs() < f32::EPSILON {
@@ -164,13 +193,19 @@ pub fn velocity(strafe: f32, forward: f32, yaw_degrees: f32, extra_distance: f32
     };
     let r = (-yaw_degrees).to_radians();
     let distance = 0.475 * (3.0 + extra_distance).clamp(0.0, 15.0);
-    [(x * r.cos() + z * r.sin()) * distance, 0.0, (z * r.cos() - x * r.sin()) * distance]
+    [
+        (x * r.cos() + z * r.sin()) * distance,
+        0.0,
+        (z * r.cos() - x * r.sin()) * distance,
+    ]
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn cfg() -> Settings { Settings::default() }
+    fn cfg() -> Settings {
+        Settings::default()
+    }
     #[test]
     fn settings_default_and_bounds() {
         assert_eq!(Settings::read(|_| None), cfg());
@@ -178,7 +213,7 @@ mod tests {
             "cooldown_ticks" => Some("0".into()),
             "extra_distance" => Some("NaN".into()),
             "allow_airborne" => Some("true".into()),
-            _ => None
+            _ => None,
         });
         assert_eq!(s.cooldown_ticks, 1);
         assert_eq!(s.extra_distance, 0.0);
@@ -187,7 +222,9 @@ mod tests {
     #[test]
     fn recharge_then_one_roll_and_recharge() {
         let mut s = State::default();
-        for _ in 0..79 { assert!(!s.tick(cfg(), true)); }
+        for _ in 0..79 {
+            assert!(!s.tick(cfg(), true));
+        }
         assert_eq!(s.meter(cfg()).charges, 0);
         assert!(!s.tick(cfg(), true));
         assert_eq!(s.meter(cfg()).charges, 1);
@@ -197,13 +234,17 @@ mod tests {
         assert!(s.meter(cfg()).rolling);
         s.pending = true;
         assert!(!s.tick(cfg(), true), "no double-roll while active");
-        for _ in 0..79 { s.tick(cfg(), true); }
+        for _ in 0..79 {
+            s.tick(cfg(), true);
+        }
         assert_eq!(s.meter(cfg()).charges, 1);
     }
     #[test]
     fn rejected_request_is_not_buffered() {
         let mut s = State::default();
-        for _ in 0..80 { s.tick(cfg(), true); }
+        for _ in 0..80 {
+            s.tick(cfg(), true);
+        }
         s.pending = true;
         assert!(!s.tick(cfg(), false));
         assert!(!s.tick(cfg(), true));
@@ -223,8 +264,8 @@ mod tests {
     }
     #[test]
     fn window_isolation_and_reset() {
-        let a=12345;
-        let b=67890;
+        let a = 12345;
+        let b = 67890;
         queue(a);
         assert!(!advance(a, cfg(), true));
         assert!(!advance(b, cfg(), true));
