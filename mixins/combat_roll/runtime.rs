@@ -37,10 +37,10 @@ impl Settings {
         if let Some(n) = get("duration_ticks").and_then(|s| s.trim().parse::<u32>().ok()) {
             out.duration_ticks = n.clamp(1, 40);
         }
-        if let Some(n) = get("extra_distance").and_then(|s| s.trim().parse::<f32>().ok()) {
-            if n.is_finite() {
-                out.extra_distance = n.clamp(-2.0, 12.0);
-            }
+        if let Some(n) = get("extra_distance").and_then(|s| s.trim().parse::<f32>().ok())
+            && n.is_finite()
+        {
+            out.extra_distance = n.clamp(-2.0, 12.0);
         }
         out.allow_airborne = get("allow_airborne").is_some_and(|s| s.trim() == "true");
         out.show_hud = get("show_hud").is_none_or(|s| s.trim() != "false");
@@ -145,7 +145,7 @@ impl State {
 }
 thread_local! {
     // Each window/splitscreen seat gets its own meter and input edge.
-    static STATES: RefCell<BTreeMap<u64, State>> = RefCell::new(BTreeMap::new());
+    static STATES: RefCell<BTreeMap<u64, State>> = const { RefCell::new(BTreeMap::new()) };
     static SETTINGS: RefCell<Option<Settings>> = const { RefCell::new(None) };
 }
 pub fn settings(mut get: impl FnMut(&str) -> Option<String>) -> Settings {
