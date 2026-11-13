@@ -54,6 +54,22 @@ jobs:
           MIXINS=$(python -c "import json;print(json.load(open('compatibility.json'))['horizon_mixins_revision'])")
           git clone --filter=blob:none https://github.com/horizon-rust/horizon.git ../horizon
           git -C ../horizon checkout "$HORIZON"
+          # Horizon ships a documentation symlink; horizon-mixins refuses
+          # symlinks in its staged source snapshot. Replace these with
+          # ordinary copies inside this disposable CI checkout.
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path("../horizon").resolve()
+          for link in root.rglob("*"):
+              if not link.is_symlink():
+                  continue
+              target = link.resolve(strict=True)
+              if not target.is_relative_to(root) or not target.is_file():
+                  raise RuntimeError(f"unsafe upstream symlink: {link}")
+              contents = target.read_bytes()
+              link.unlink()
+              link.write_bytes(contents)
+          PY
           git clone --filter=blob:none https://github.com/horizon-rust/horizon-mixins.git ../horizon-mixins
           git -C ../horizon-mixins checkout "$MIXINS"
       - name: Compile native mixin transformer
