@@ -93,4 +93,4 @@ jobs:
             echo "Release $TAG exists; refusing to overwrite an immutable pin"
             exit 0
           fi
-          gh release create "$TAG" dist/*.hnmod             --title "Combat Roll $VERSION · Horizon $PIN"             --notes "GPL-3.0-or-later. Native source bundle for the exact pinned Horizon revision. This is an early client-side port, not the original CombatRoll feature set."
+          gh release create "$TAG" dist/*.hnmod             --title "Combat Roll $VERSION · Horizon $PIN"             --notes "GPL-3.0-only. Native source bundle for the exact pinned Horizon revision. This is an early client-side port, not the original CombatRoll feature set."
