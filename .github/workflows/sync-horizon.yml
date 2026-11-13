@@ -1,0 +1,40 @@
+name: Synchronize with Horizon nightly
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  open-compatibility-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check latest published Horizon nightly
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python tools/sync_upstream.py
+      - name: Validate generated bundle metadata
+        run: python tools/package.py --check
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ github.token }}
+          branch: automation/horizon-nightly
+          delete-branch: true
+          commit-message: "chore: sync Horizon nightly and native mixin compiler"
+          title: "chore: synchronize Combat Roll with Horizon nightly"
+          body: |
+            Automatically generated from Horizon's published nightly release,
+            with a pinned Horizon commit, native mixin compiler and game version.
+
+            The full Horizon integration CI must pass before merging.
+            This is not an automatic claim of feature compatibility.
+          add-paths: |
+            compatibility.json
+            mixins/combat_roll/horizon-mixin.toml
