@@ -103,11 +103,11 @@ struct State {
 }
 impl Default for State {
     fn default() -> Self {
-        // CombatRoll starts with zero charges, recharging one after the first cooldown.
+        // Upstream CombatRoll makes its first charge ready on the first client tick.
         Self {
             pending: false,
             elapsed: u32::MAX,
-            charges: 0,
+            charges: 1,
             recharge: 0,
         }
     }
@@ -222,11 +222,6 @@ mod tests {
     #[test]
     fn recharge_then_one_roll_and_recharge() {
         let mut s = State::default();
-        for _ in 0..79 {
-            assert!(!s.tick(cfg(), true));
-        }
-        assert_eq!(s.meter(cfg()).charges, 0);
-        assert!(!s.tick(cfg(), true));
         assert_eq!(s.meter(cfg()).charges, 1);
         s.pending = true;
         assert!(s.tick(cfg(), true));
@@ -267,9 +262,12 @@ mod tests {
         let a = 12345;
         let b = 67890;
         queue(a);
-        assert!(!advance(a, cfg(), true));
+        assert!(advance(a, cfg(), true));
+        assert!(meter(a, cfg()).rolling);
         assert!(!advance(b, cfg(), true));
+        assert_eq!(meter(b, cfg()).charges, 1);
         reset(a);
-        assert_eq!(meter(a, cfg()).charges, 0);
+        assert!(!meter(a, cfg()).rolling);
+        assert_eq!(meter(a, cfg()).charges, 1);
     }
 }
